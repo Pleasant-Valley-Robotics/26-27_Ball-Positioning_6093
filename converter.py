@@ -3,7 +3,7 @@ import numpy as np
 
 import grapher
 
-videoPath = "video1.mp4"
+videoPath = "fullTest.mp4"
 
 fileOutPath = "data.txt"
 
@@ -37,6 +37,32 @@ def findBallCenter(image) -> tuple[int, int] | None:
 
         return centerX, centerY
 
+def getTransformMatrix(pCorner, pXEnd, pYEnd):
+    p4 = [
+        pXEnd[0] + pYEnd[0] - pCorner[0],
+        pXEnd[1] + pYEnd[1] - pCorner[1]
+    ]
+
+    srcPoints = np.float32([pCorner, pXEnd, pYEnd, p4]) # type: ignore
+
+    scale = 500
+
+    distCorner = [100, 600]
+    distXEnd = [distCorner[0] + scale, distCorner[1]]
+    distYEnd = [distCorner[0], distCorner[1] - scale]
+    dist4 = [distCorner[0] + scale, distCorner[1] - scale]
+
+    distPoints = np.float32([distCorner, distXEnd, distYEnd, dist4]) # type: ignore
+
+    M = cv2.getPerspectiveTransform(srcPoints, distPoints)
+    return M
+
+def rectifyImage(image: np.ndarray, matrix):
+    outputSize = (600, 800)
+    rectified = cv2.warpPerspective(image, matrix, outputSize)
+    return rectified
+
+
 def computeVideo(videoPath: str) -> tuple[np.ndarray, np.ndarray] | None:
     capture = cv2.VideoCapture(videoPath)
     if not capture.isOpened():
@@ -45,6 +71,7 @@ def computeVideo(videoPath: str) -> tuple[np.ndarray, np.ndarray] | None:
 
     xPoints: np.ndarray = np.array([])
     yPoints: np.ndarray = np.array([])
+    timeStamps: np.ndarray = np.array([])
 
     while capture.isOpened():
         ret, frame = capture.read()
@@ -61,10 +88,41 @@ def computeVideo(videoPath: str) -> tuple[np.ndarray, np.ndarray] | None:
 
         xPoints = np.append(xPoints, position[0])
         yPoints = np.append(yPoints, position[1])
+        timeStamps = np.append(timeStamps, capture.get(cv2.CAP_PROP_POS_MSEC))
         
     capture.release()
 
-    return xPoints, yPoints
+    coords = np.vstack((xPoints, yPoints))
+
+    return coords, timeStamps
+
+def transformPoints(matrix, coords: np.ndarray):
+    transformed = matrix @ coords
+    return transformed
+
+
+def getVideoFrame(videoPath: str, desiredFrameNum: int) -> np.ndarray:
+    capture = cv2.VideoCapture(videoPath)
+    if not capture.isOpened():
+        print("Error: could not open video")
+        exit(1)
+
+    frameNum = 0
+
+    while capture.isOpened():
+        ret, frame = capture.read()
+
+        if ret == False:
+            print("Reached the end of the video or failed to load frame before desired frame")
+            exit(1)
+
+        if frameNum == desiredFrameNum:
+            return frame
+
+        frameNum += 1
+
+    exit(1)
+    
 
 def loadImage(imagePath: str):
     return cv2.imread(imagePath)
@@ -75,18 +133,23 @@ if __name__ == "__main__":
 
     #xPoints, yPoints = grapher.loadData(fileOutPath)
 
+    #"""
     output = computeVideo(videoPath)
 
     if output == None:
         print("Video ran into an error")
         exit()
 
-    xPoints, yPoints = output
+    coords, timeStamps = output
 
-    grapher.writeData(fileOutPath, xPoints, yPoints)
+    grapher.writeData(fileOutPath, coords, timeStamps)
 
-    grapher.graphPoints(xPoints, yPoints)
+    grapher.graphPoints(timeStamps, coords[0])
+    grapher.graphPoints(timeStamps, coords[1])
     #grapher.graphPoints(np.array([centerX]), np.array([centerY]))
+    #"""
+
+
 
 
 cv2.destroyAllWindows()
