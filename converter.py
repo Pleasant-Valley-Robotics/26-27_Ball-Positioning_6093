@@ -1,16 +1,16 @@
 import cv2
 import numpy as np
+from pathlib import Path
 
 import grapher
-
-videoPath = "fullTest.mp4"
-
-fileOutPath = "data.txt"
 
 blur = 11
 
 lowerYellow = np.array([20, 100, 100])
 upperYellow = np.array([30, 255, 255])
+
+def getVideoPath(fileName: str):
+    return Path("videos") / fileName
 
 def findBallCenter(image) -> tuple[int, int] | None:
     if image is None:
@@ -36,6 +36,18 @@ def findBallCenter(image) -> tuple[int, int] | None:
         #cv2.imwrite("detected_center.png", image)
 
         return centerX, centerY
+    
+def get2PTransformMatrix(p1, p2):
+    pixelDist = np.linalg.norm(p1 - p2)
+    realDist = 1
+    
+    scale = realDist / pixelDist
+    M = np.array([
+        [scale, 0],
+        [0, -scale],
+    ], dtype=np.float32)
+    
+    return M
 
 def getTransformMatrix(pCorner, pXEnd, pYEnd):
     p4 = [
@@ -63,8 +75,8 @@ def rectifyImage(image: np.ndarray, matrix):
     return rectified
 
 
-def computeVideo(videoPath: str) -> tuple[np.ndarray, np.ndarray] | None:
-    capture = cv2.VideoCapture(videoPath)
+def computeVideo(videoPath: Path) -> tuple[np.ndarray, np.ndarray] | None:
+    capture = cv2.VideoCapture(str(videoPath.resolve()))
     if not capture.isOpened():
         print("Error: could not open video")
         exit(1)
@@ -101,8 +113,8 @@ def transformPoints(matrix, coords: np.ndarray):
     return transformed
 
 
-def getVideoFrame(videoPath: str, desiredFrameNum: int) -> np.ndarray:
-    capture = cv2.VideoCapture(videoPath)
+def getVideoFrame(videoPath: Path, desiredFrameNum: int) -> np.ndarray:
+    capture = cv2.VideoCapture(str(videoPath.resolve()))
     if not capture.isOpened():
         print("Error: could not open video")
         exit(1)
@@ -128,6 +140,10 @@ def loadImage(imagePath: str):
     return cv2.imread(imagePath)
 
 if __name__ == "__main__":
+    videoPath = Path("videos/fullTest.mp4")
+
+    fileOutPath = "data.txt"
+    
     #centerX, centerY = findBallCenter("images/testImage.png")
     #print(f"Center coordinates found at: X={centerX}, Y={centerY}")
 
@@ -136,7 +152,7 @@ if __name__ == "__main__":
     #"""
     output = computeVideo(videoPath)
 
-    if output == None:
+    if output is None:
         print("Video ran into an error")
         exit()
 
@@ -152,4 +168,4 @@ if __name__ == "__main__":
 
 
 
-cv2.destroyAllWindows()
+    cv2.destroyAllWindows()

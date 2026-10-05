@@ -3,7 +3,10 @@ import numpy as np
 
 
 def graphPoints(xPoints: np.ndarray, yPoints: np.ndarray):
-    plt.scatter(xPoints, yPoints)
+    plt.plot(xPoints, yPoints)
+    #yMin = yPoints.min()
+    #yMax = yPoints.max()
+    #plt.ylim(yMin, yMax)
     plt.show()
 
 def loadData(filePath: str):
@@ -14,10 +17,10 @@ def loadData(filePath: str):
         for line in file:
             data = line.strip()
             data = data.split(" ")
-            if len(data) == 2:
-                xPoints = np.append(xPoints, data[0])
-                yPoints = np.append(yPoints, data[1])
-                timeStamps = np.append(timeStamps, data[2])
+            if len(data) == 3:
+                xPoints = np.append(xPoints, float(data[0]))
+                yPoints = np.append(yPoints, float(data[1]))
+                timeStamps = np.append(timeStamps, float(data[2]))
 
 
     coords = np.vstack((xPoints, yPoints))
@@ -33,4 +36,5 @@ def writeData(filePath: str, coords: np.ndarray, timeStamps: np.ndarray):
 
 if __name__ == "__main__":
     coords, timeStamps = loadData("data.txt")
-    graphPoints(coords[0], coords[1])
+    graphPoints(timeStamps, coords[0])
+    graphPoints(timeStamps, coords[1])
