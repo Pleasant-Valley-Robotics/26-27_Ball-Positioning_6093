@@ -37,14 +37,15 @@ def findBallCenter(image) -> tuple[int, int] | None:
 
         return centerX, centerY
     
-def get2PTransformMatrix(p1, p2):
-    pixelDist = np.linalg.norm(p1 - p2)
+def get2PTransformMatrix(p1, p2, dimensions: tuple[int, int]):
+    pixelDist = np.linalg.norm(p2 - p1)
     realDist = 1
     
     scale = realDist / pixelDist
     M = np.array([
-        [scale, 0],
-        [0, -scale],
+        [-scale, 0, dimensions[0]*scale],
+        [0, -scale, dimensions[1]*scale],
+        [0, 0, 1]
     ], dtype=np.float32)
     
     return M
@@ -75,7 +76,7 @@ def rectifyImage(image: np.ndarray, matrix):
     return rectified
 
 
-def computeVideo(videoPath: Path) -> tuple[np.ndarray, np.ndarray] | None:
+def computeVideo(videoPath: Path, startFrame: int = 0, endFrame: float = float('inf')) -> tuple[np.ndarray, np.ndarray] | None:
     capture = cv2.VideoCapture(str(videoPath.resolve()))
     if not capture.isOpened():
         print("Error: could not open video")
@@ -85,10 +86,14 @@ def computeVideo(videoPath: Path) -> tuple[np.ndarray, np.ndarray] | None:
     yPoints: np.ndarray = np.array([])
     timeStamps: np.ndarray = np.array([])
 
+    capture.set(cv2.CAP_PROP_POS_FRAMES, startFrame)
+
+    currentFrame: int = startFrame
+
     while capture.isOpened():
         ret, frame = capture.read()
 
-        if ret == False:
+        if ret == False or currentFrame > endFrame:
             print("Reached the end of the video or failed to load frame.")
             break
 
@@ -101,6 +106,8 @@ def computeVideo(videoPath: Path) -> tuple[np.ndarray, np.ndarray] | None:
         xPoints = np.append(xPoints, position[0])
         yPoints = np.append(yPoints, position[1])
         timeStamps = np.append(timeStamps, capture.get(cv2.CAP_PROP_POS_MSEC))
+
+        currentFrame += 1
         
     capture.release()
 
@@ -108,9 +115,27 @@ def computeVideo(videoPath: Path) -> tuple[np.ndarray, np.ndarray] | None:
 
     return coords, timeStamps
 
+def getVideoDimensions(videoPath: Path) -> tuple[int, int] | None:
+    cap = cv2.VideoCapture(str(videoPath.resolve()))
+
+    if not cap.isOpened():
+        print("Error: Could not open video.")
+        cap.release()
+        return None
+    
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    cap.release()
+
+    return width, height
+
 def transformPoints(matrix, coords: np.ndarray):
-    transformed = matrix @ coords
-    return transformed
+    ones = np.ones((1, coords.shape[1]))
+    new = np.vstack([coords, ones])
+    transformed = matrix @ new
+    transformed_2d = transformed[:2, :] / transformed[2, :]
+    return transformed_2d
 
 
 def getVideoFrame(videoPath: Path, desiredFrameNum: int) -> np.ndarray:
@@ -121,20 +146,14 @@ def getVideoFrame(videoPath: Path, desiredFrameNum: int) -> np.ndarray:
 
     frameNum = 0
 
-    while capture.isOpened():
-        ret, frame = capture.read()
+    capture.set(cv2.CAP_PROP_POS_FRAMES, desiredFrameNum)
 
-        if ret == False:
-            print("Reached the end of the video or failed to load frame before desired frame")
-            exit(1)
+    ret, frame = capture.read()
+    if not ret:
+        print("Reached the end of the video or failed to load frame before desired frame")
+        exit(1)
 
-        if frameNum == desiredFrameNum:
-            return frame
-
-        frameNum += 1
-
-    exit(1)
-    
+    return frame
 
 def loadImage(imagePath: str):
     return cv2.imread(imagePath)

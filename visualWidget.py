@@ -4,34 +4,28 @@ from pathlib import Path
 
 import converter
 
-class PointGrabber:
-    imgName: str = "fullTest.mp4"
+class Grabber:
+    fileName: str = "fullTest.mp4"
+
     img: np.ndarray
-    #img = cv2.imread('images/image1.jpg')
-    #img = converter.getVideoFrame("videos/fullTest.mp4", 100)
-    
-    points: list[np.ndarray] = []
-    
-    imageShown: bool = False
-    
+
     windowName = "image"
-    
-    def __init__(self) -> None:
-        ...
-    
-    def setImageName(self, name:str):
-        self.imgName = name
-    
-    def getImgPath(self) -> Path:
-        return converter.getVideoPath(self.imgName)
-    
-    def loadImage(self, desiredFrame: int):
-        self.img = converter.getVideoFrame(self.getImgPath(), desiredFrame)
-        cv2.imshow(self.windowName, self.getCurrentImage())
-    
+
+    shown: bool = False
+
+    def setFileName(self, name:str):
+        self.fileName = name
+
+    def getFilePath(self) -> Path:
+        return converter.getVideoPath(self.fileName)
+
     def getCurrentImage(self):
         return self.img
-    
+
+    def loadVideo(self, desiredFrame: int):
+        self.img = converter.getVideoFrame(self.getFilePath(), desiredFrame)
+        cv2.imshow(self.windowName, self.getCurrentImage())
+
     def openWindow(self):
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowName, 1200, 800)
@@ -41,6 +35,16 @@ class PointGrabber:
         if self.imageShown:
             cv2.destroyAllWindows()
             self.imageShown = False
+    
+
+class PointGrabber(Grabber):
+    #img = cv2.imread('images/image1.jpg')
+    #img = converter.getVideoFrame("videos/fullTest.mp4", 100)
+    
+    points: list[np.ndarray] = []
+    
+    def __init__(self) -> None:
+        ...
     
     def addPoint(self, x: int, y: int):
         self.points.append(np.array([x, y]))
@@ -68,13 +72,72 @@ class PointGrabber:
             cv2.circle(self.getCurrentImage(), (x, y), 15, (255, 0, 0), -1)
             cv2.imshow("image", self.getCurrentImage())
 
+class FrameGrabber(Grabber):
+    currentFrame: int = 0
+
+    jumpDist: int = 10
+
+    hasFrame: bool = False
+
+    def __init__(self) -> None:
+        pass
+
+    def changeFrame(self, ammount: int):
+        self.currentFrame += ammount
+        self.loadVideo(self.currentFrame)
+
+    def setFrame(self, start: int):
+        self.currentFrame = start
+        self.loadVideo(self.currentFrame)
+
+    def getFrame(self, startingFrame: int):
+        self.openWindow()
+        self.setFrame(startingFrame)
+        self.hasFrame = False
+        while not self.hasFrame:
+            key = cv2.waitKeyEx(1)
+            if key == 32:
+                self.hasFrame = True
+
+            # left arrow
+            if key == 65361:
+                self.changeFrame(-self.jumpDist)
+            # right arrow
+            if key == 65363:
+                self.changeFrame(self.jumpDist)
+
+            # comma
+            if key == 44:
+                self.changeFrame(-1)
+            # period
+            if key == 46:
+                self.changeFrame(1)
+
+            if key == 27:
+                cv2.destroyAllWindows()
+                exit(1)
+
+        while not cv2.waitKey(30) == 27:
+            ...
+
+        self.closeWindow()
+
+        return self.currentFrame
+
 if __name__ == "__main__":
+    """
     grabber = PointGrabber()
-    grabber.setImageName("fullTest.mp4")
+    grabber.setFileName("fullTest.mp4")
     grabber.openWindow()
-    grabber.loadImage(10)
+    grabber.loadVideo(10)
     points = grabber.getPoints(2)
-    grabber.loadImage(100)
+    grabber.loadVideo(100)
     points = grabber.getPoints(2)
     grabber.closeWindow()
     print(points)
+    """
+
+    grabber = FrameGrabber()
+    grabber.setFileName("fullTest.mp4")
+    frame = grabber.getFrame(200)
+    print(frame)
