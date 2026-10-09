@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from pathlib import Path
+from colorsys import hls_to_rgb
 
 import grapher
 
@@ -9,8 +10,22 @@ blur = 11
 lowerYellow = np.array([20, 100, 100])
 upperYellow = np.array([30, 255, 255])
 
+lowerGreenHSL = np.array([150, 20, 30]) # in hsl
+upperGreenHSL = np.array([180, 100, 100]) # in hsl
+
+def hsl_to_hsv_pixel(h, s, l):
+  r, g, b = hls_to_rgb(h / 360.0, l / 100.0, s / 100.0)
+  # Convert RGB [0, 1] to BGR [0, 255] for OpenCV
+  bgr_pixel = np.uint8([[[b * 255, g * 255, r * 255]]])
+  # Convert BGR to OpenCV HSV (H: 0-179, S: 0-255, V: 0-255)
+  hsv_pixel = cv2.cvtColor(bgr_pixel, cv2.COLOR_BGR2HSV)
+  return hsv_pixel[0][0]
+
+lower = hsl_to_hsv_pixel(lowerGreenHSL[0], lowerGreenHSL[1], lowerGreenHSL[2])
+upper = hsl_to_hsv_pixel(upperGreenHSL[0], upperGreenHSL[1], upperGreenHSL[2])
+
 def getVideoPath(fileName: str):
-    return Path("videos") / fileName
+    return Path("videos") / (fileName + ".mp4")
 
 def findBallCenter(image) -> tuple[int, int] | None:
     if image is None:
@@ -21,7 +36,7 @@ def findBallCenter(image) -> tuple[int, int] | None:
 
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-    mask = cv2.inRange(hsv, lowerYellow, upperYellow)
+    mask = cv2.inRange(hsv, lower, upper)
 
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
@@ -159,16 +174,16 @@ def loadImage(imagePath: str):
     return cv2.imread(imagePath)
 
 if __name__ == "__main__":
-    videoPath = Path("videos/fullTest.mp4")
+    #videoPath = Path("videos/fullTest.mp4")
 
-    fileOutPath = "data.txt"
+    #fileOutPath = "data.txt"
     
     #centerX, centerY = findBallCenter("images/testImage.png")
     #print(f"Center coordinates found at: X={centerX}, Y={centerY}")
 
     #xPoints, yPoints = grapher.loadData(fileOutPath)
 
-    #"""
+    """
     output = computeVideo(videoPath)
 
     if output is None:
@@ -182,9 +197,9 @@ if __name__ == "__main__":
     grapher.graphPoints(timeStamps, coords[0])
     grapher.graphPoints(timeStamps, coords[1])
     #grapher.graphPoints(np.array([centerX]), np.array([centerY]))
-    #"""
+    """
 
-
+    
 
 
     cv2.destroyAllWindows()

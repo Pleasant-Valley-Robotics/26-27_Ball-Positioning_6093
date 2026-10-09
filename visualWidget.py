@@ -45,6 +45,9 @@ class PointGrabber(Grabber):
     
     def __init__(self) -> None:
         ...
+
+    #def setFileName(self, name: str):
+    #    return super().setFileName(name + ".mp4")
     
     def addPoint(self, x: int, y: int):
         self.points.append(np.array([x, y]))
@@ -75,12 +78,15 @@ class PointGrabber(Grabber):
 class FrameGrabber(Grabber):
     currentFrame: int = 0
 
-    jumpDist: int = 10
+    jumpDist: int = 100
 
     hasFrame: bool = False
 
     def __init__(self) -> None:
         pass
+
+    #def setFileName(self, name: str):
+    #    return super().setFileName(name + ".mp4")
 
     def changeFrame(self, ammount: int):
         self.currentFrame += ammount

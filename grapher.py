@@ -54,7 +54,7 @@ def loadData(filePath: str):
 def writeData(filePath: str, coords: np.ndarray, timeStamps: np.ndarray):
     xPoints = coords[0]
     yPoints = coords[1]
-    with open(filePath, "w") as file:
+    with open("data/" + filePath + ".txt", "w") as file:
         for x, y, z in zip(xPoints, yPoints, timeStamps):
             file.write(f"{x} {y} {z}\n")
 
