@@ -13,6 +13,9 @@ upperYellow = np.array([30, 255, 255])
 lowerGreenHSL = np.array([150, 20, 30]) # in hsl
 upperGreenHSL = np.array([180, 100, 100]) # in hsl
 
+lowerGreenHSV = np.array([150, 85, 92])
+upperGreenHSV = np.array([179, 0, 100])
+
 def hsl_to_hsv_pixel(h, s, l):
   r, g, b = hls_to_rgb(h / 360.0, l / 100.0, s / 100.0)
   # Convert RGB [0, 1] to BGR [0, 255] for OpenCV
@@ -21,8 +24,8 @@ def hsl_to_hsv_pixel(h, s, l):
   hsv_pixel = cv2.cvtColor(bgr_pixel, cv2.COLOR_BGR2HSV)
   return hsv_pixel[0][0]
 
-lower = hsl_to_hsv_pixel(lowerGreenHSL[0], lowerGreenHSL[1], lowerGreenHSL[2])
-upper = hsl_to_hsv_pixel(upperGreenHSL[0], upperGreenHSL[1], upperGreenHSL[2])
+lower = lowerGreenHSV
+upper = upperGreenHSV
 
 def getVideoPath(fileName: str):
     return Path("videos") / (fileName + ".mp4")
@@ -36,19 +39,30 @@ def findBallCenter(image) -> tuple[int, int] | None:
 
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-    mask = cv2.inRange(hsv, lower, upper)
+    cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("image", 1200, 800)
 
-    mask = cv2.erode(mask, None, iterations=2)
-    mask = cv2.dilate(mask, None, iterations=2)
+    mask = cv2.inRange(blurred, lower, upper)
 
+    #mask = cv2.erode(mask, None, iterations=2)
+    #mask = cv2.dilate(mask, None, iterations=2)
+
+    #displayed = cv2.cvtColor(blurred, cv2.COLOR_HSV2BGR)
+
+    cv2.imshow("image", mask)
+    cv2.waitKey(0)
+    exit()
+
+    #cv2.imshow("image", mask)
+    
     moments = cv2.moments(mask)
 
     if moments["m00"] != 0:
         centerX = int(moments["m10"] / moments["m00"])
         centerY = int(moments["m01"] / moments["m00"])
 
-        #cv2.circle(image, (centerX, centerY), 10, (0, 0, 255), -1)
-        #cv2.imwrite("detected_center.png", image)
+        cv2.circle(image, (centerX, centerY), 10, (0, 0, 255), -1)
+        cv2.imwrite("detected_center.png", image)
 
         return centerX, centerY
     
@@ -198,8 +212,9 @@ if __name__ == "__main__":
     grapher.graphPoints(timeStamps, coords[1])
     #grapher.graphPoints(np.array([centerX]), np.array([centerY]))
     """
-
-    
+    testImage = loadImage("images/greenTest.png")
+    coords = findBallCenter(testImage)
+    print(coords)
 
 
     cv2.destroyAllWindows()
