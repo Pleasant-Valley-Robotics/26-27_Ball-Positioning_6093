@@ -112,6 +112,11 @@ class FrameGrabber(Grabber):
             if key == 65363:
                 self.changeFrame(self.jumpDist)
 
+            if key == ord('n'):
+                self.changeFrame(-self.jumpDist // 4)
+            if key == ord('m'):
+                self.changeFrame(self.jumpDist // 4)
+
             # comma
             if key == 44:
                 self.changeFrame(-1)

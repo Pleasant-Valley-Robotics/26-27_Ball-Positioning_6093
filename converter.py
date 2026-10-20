@@ -13,9 +13,13 @@ upperYellow = np.array([30, 255, 255])
 lowerGreenHSL = np.array([150, 20, 30]) # in hsl
 upperGreenHSL = np.array([180, 100, 100]) # in hsl
 
-lowerGreenHSV = np.array([150, 85, 92])
-upperGreenHSV = np.array([179, 0, 100])
+lowerGreenHSV = np.array([150 - 20, 0, 92])
+upperGreenHSV = np.array([179, 85 + 10, 100])
 
+lowerGreen = np.array([70, 0, 150]) # idk why this works
+upperGreen = np.array([90, 255, 255]) # idk man
+
+"""
 def hsl_to_hsv_pixel(h, s, l):
   r, g, b = hls_to_rgb(h / 360.0, l / 100.0, s / 100.0)
   # Convert RGB [0, 1] to BGR [0, 255] for OpenCV
@@ -23,9 +27,10 @@ def hsl_to_hsv_pixel(h, s, l):
   # Convert BGR to OpenCV HSV (H: 0-179, S: 0-255, V: 0-255)
   hsv_pixel = cv2.cvtColor(bgr_pixel, cv2.COLOR_BGR2HSV)
   return hsv_pixel[0][0]
+"""
 
-lower = lowerGreenHSV
-upper = upperGreenHSV
+lower = lowerGreen
+upper = upperGreen
 
 def getVideoPath(fileName: str):
     return Path("videos") / (fileName + ".mp4")
@@ -39,30 +44,19 @@ def findBallCenter(image) -> tuple[int, int] | None:
 
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-    cv2.namedWindow("image", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("image", 1200, 800)
+    mask = cv2.inRange(hsv, lower, upper)
 
-    mask = cv2.inRange(blurred, lower, upper)
-
-    #mask = cv2.erode(mask, None, iterations=2)
-    #mask = cv2.dilate(mask, None, iterations=2)
-
-    #displayed = cv2.cvtColor(blurred, cv2.COLOR_HSV2BGR)
-
-    cv2.imshow("image", mask)
-    cv2.waitKey(0)
-    exit()
-
-    #cv2.imshow("image", mask)
-    
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=2)
+        
     moments = cv2.moments(mask)
 
     if moments["m00"] != 0:
         centerX = int(moments["m10"] / moments["m00"])
         centerY = int(moments["m01"] / moments["m00"])
 
-        cv2.circle(image, (centerX, centerY), 10, (0, 0, 255), -1)
-        cv2.imwrite("detected_center.png", image)
+        #cv2.circle(image, (centerX, centerY), 10, (0, 0, 255), -1)
+        #cv2.imwrite("detected_center.png", image)
 
         return centerX, centerY
     
@@ -71,9 +65,13 @@ def get2PTransformMatrix(p1, p2, dimensions: tuple[int, int]):
     realDist = 1
     
     scale = realDist / pixelDist
+
+    #averageY = (p1[1] + p2[1]) / 2
+    averageY = dimensions[1] / scale
+
     M = np.array([
         [-scale, 0, dimensions[0]*scale],
-        [0, -scale, dimensions[1]*scale],
+        [0, -scale, dimensions[1]*scale - (averageY * scale - dimensions[1])],
         [0, 0, 1]
     ], dtype=np.float32)
     
@@ -141,6 +139,9 @@ def computeVideo(videoPath: Path, startFrame: int = 0, endFrame: float = float('
     capture.release()
 
     coords = np.vstack((xPoints, yPoints))
+
+    timeStamps = timeStamps - timeStamps[0]
+    timeStamps = timeStamps / (8 * 1000)
 
     return coords, timeStamps
 

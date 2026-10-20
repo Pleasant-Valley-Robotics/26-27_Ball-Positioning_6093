@@ -2,10 +2,11 @@ import visualWidget
 import converter
 import grapher
 
-fileName = "trial1"
+filePrefix = "trial"
+startNum = 1
+endNum = 7
 
-
-def testVideo(fileName: str):
+def runVideo(fileName: str):
     pointGrabber = visualWidget.PointGrabber()
     pointGrabber.setFileName(fileName)
     videoPath = converter.getVideoPath(fileName)
@@ -44,4 +45,8 @@ def testVideo(fileName: str):
 
     grapher.writeData(fileName, realPoints, timeStamps)
 
-testVideo(fileName)
+
+#for trialNum in range(startNum, endNum+1):
+#    runVideo(f"{filePrefix}{trialNum}")
+
+runVideo("PositionExam")
