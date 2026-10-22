@@ -19,7 +19,8 @@ def fitGraph(xPoints: np.ndarray, yPoints: np.ndarray, xLabel: str="", yLabel: s
     ##equation_text = f"y = {b:.10f}x^2 + {c:.5f}x + {d:.5f}"
     #equation_text = f"y = {a:.10f}x^3 + {b:.10f}x^2 + {c:.5f}x + {d:.5f}"
     #print(equation_text)
-    x_line, y_line = getXYEquation(xPoints, yPoints)
+    coeff = list(getPoly(xPoints, yPoints))
+    x_line, y_line = evalPoly(coeff, min(xPoints), max(xPoints))
 
     plt.scatter(xPoints, yPoints)
 
@@ -37,23 +38,17 @@ def fitGraph(xPoints: np.ndarray, yPoints: np.ndarray, xLabel: str="", yLabel: s
 
 # Coeff are high to low
 def xShiftPoly(coeff, distance):
-    a, b, c, d = coeff
-    originalPoly = np.polynomial.Polynomial([d, c, b, a])
+    originalPoly = np.polynomial.Polynomial(coeff[::-1])
     shiftedPoly = originalPoly.convert(domain=originalPoly.domain + distance, window=originalPoly.window)
-    d2, c2, b2, a2 = shiftedPoly.coef
-    return [a2, b2, c2, d2]
+    return list(shiftedPoly.coef[::-1])
 
-def getPoly(xPoints, yPoints):
-    coeff = np.polyfit(xPoints, yPoints, deg=3)
-    return coeff
+def getPoly(xPoints, yPoints, deg=3):
+    coeff = np.polyfit(xPoints, yPoints, deg)
+    return list(coeff)
 
-def getXYEquation(xPoints, yPoints):
-    a, b, c, d = np.polyfit(xPoints - xPoints[0], yPoints, deg=3)
-    minX = np.roots([a, b, c, d - .42803907627239823])
-    coeff = xShiftPoly([a, b, c, d], minX[2])
-    xLine = np.linspace(0, max(xPoints - xPoints[0]))
+def evalPoly(coeff, minX, maxX):
+    xLine = np.linspace(minX, maxX, 100)
     yLine = np.polyval(coeff, xLine)
-    #yLine = a2 * xLine**3 + b2 * xLine**2 + c2 * xLine + d2
     return xLine, yLine
 
 def loadData(filePath: str):
@@ -83,11 +78,6 @@ def writeData(filePath: str, coords: np.ndarray, timeStamps: np.ndarray):
         for x, y, z in zip(xPoints, yPoints, timeStamps):
             file.write(f"{x} {y} {z}\n")
 
-def addGraph(coords, timeStamps):
-    plt.scatter(timeStamps - timeStamps[0], coords[1])
-    #for coords, timeStamps in zip(coordss, timeStampss):
-    #    plt.scatter(coords, timeStamps)
-
 def addLine(xPoints, yPoints):
     plt.plot(
         xPoints,
@@ -96,8 +86,26 @@ def addLine(xPoints, yPoints):
         linewidth=3,
     )
 
-def addLineData(coords, timeStamps):
-    xLine, yLine = getXYEquation(timeStamps, coords[1])
+def getVelocityAtPoint(coeff, xPoint):
+    p = np.polynomial.Polynomial(coeff[::-1])
+    pDeriv = p.deriv()
+    return pDeriv(xPoint) * 1000 * 8
+
+# angle in radians
+def getAngleAtPoint(coeff, xPoint):
+    slope = getVelocityAtPoint(coeff, xPoint)
+    return np.arctan(slope)
+
+def addWrongLineData(coords, timeStamps):
+    startingHeight = .42803907627239823
+    correctedTime = timeStamps - timeStamps[0]
+    coeff = getPoly(correctedTime, coords[1], 3)
+    roots = np.roots(coeff[:-1] + [coeff[-1] - startingHeight])
+    startX = roots[-1]
+    coeff = xShiftPoly(coeff, startX)
+    print(getVelocityAtPoint(coeff, 0))
+    print(np.degrees(getAngleAtPoint(coeff, 0)))
+    xLine, yLine = evalPoly(coeff, 0, max(correctedTime))
     addLine(xLine, yLine)
 
 
@@ -113,13 +121,13 @@ def testMultiple():
     coords5, timeStamps5 = loadData("data/trial5.txt")
     coords6, timeStamps6 = loadData("data/trial6.txt")
     coords7, timeStamps7 = loadData("data/trial7.txt")
-    addLineData(coords1, timeStamps1)
-    addLineData(coords2, timeStamps2)
-    addLineData(coords3, timeStamps3)
-    addLineData(coords4, timeStamps4)
-    addLineData(coords5, timeStamps5)
-    addLineData(coords6, timeStamps6)
-    addLineData(coords7, timeStamps7)
+    addWrongLineData(coords1, timeStamps1)
+    addWrongLineData(coords2, timeStamps2)
+    addWrongLineData(coords3, timeStamps3)
+    addWrongLineData(coords4, timeStamps4)
+    addWrongLineData(coords5, timeStamps5)
+    addWrongLineData(coords6, timeStamps6)
+    addWrongLineData(coords7, timeStamps7)
     plt.xlabel("Time (ms)")
     plt.ylabel("Y Position (m)")
     plt.title("DIO Ball paths at 1000 motor speed")
