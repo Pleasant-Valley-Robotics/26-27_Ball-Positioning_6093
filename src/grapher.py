@@ -108,6 +108,10 @@ def addWrongLineData(coords, timeStamps):
     xLine, yLine = evalPoly(coeff, 0, max(correctedTime))
     addLine(xLine, yLine)
 
+def graphFile(filePath: str):
+    coords, timeStamps = loadData("data/" + filePath)
+    graphPoints(timeStamps, coords[1], "Time", "Y Position")
+    graphPoints(timeStamps, coords[0], "Time", "X Position")
 
 def testSingle():
     coords, timeStamps = loadData("data/trial1.txt")
@@ -134,5 +138,6 @@ def testMultiple():
     plt.show()
 
 if __name__ == "__main__":
-    testMultiple()
+    #testMultiple()
     #testSingle()
+    graphFile("legacy/data.txt")

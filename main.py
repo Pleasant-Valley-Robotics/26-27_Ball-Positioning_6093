@@ -1,13 +1,14 @@
-import visualWidget
-import converter
-import grapher
+from src.visualWidget import PointGrabber
+from src.visualWidget import FrameGrabber
+import src.converter as converter
+import src.grapher as grapher
 
 filePrefix = "trial"
 startNum = 1
 endNum = 7
 
 def runVideo(fileName: str):
-    pointGrabber = visualWidget.PointGrabber()
+    pointGrabber = PointGrabber()
     pointGrabber.setFileName(fileName)
     videoPath = converter.getVideoPath(fileName)
     pointGrabber.openWindow()
@@ -15,7 +16,7 @@ def runVideo(fileName: str):
     points = pointGrabber.getPoints(2)
     pointGrabber.closeWindow()
 
-    frameGrabber = visualWidget.FrameGrabber()
+    frameGrabber = FrameGrabber()
     frameGrabber.setFileName(fileName)
     startFrame = frameGrabber.getFrame(0)
     endFrame = frameGrabber.getFrame(startFrame)

@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from colorsys import hls_to_rgb
 
-import grapher
+import src.grapher as grapher
 
 blur = 11
 
@@ -46,8 +46,8 @@ def findBallCenter(image) -> tuple[int, int] | None:
 
     mask = cv2.inRange(hsv, lower, upper)
 
-    mask = cv2.erode(mask, None, iterations=2)
-    mask = cv2.dilate(mask, None, iterations=2)
+    mask = cv2.erode(mask, None, iterations=2) # type: ignore
+    mask = cv2.dilate(mask, None, iterations=2) # type: ignore
         
     moments = cv2.moments(mask)
 
@@ -94,7 +94,7 @@ def getTransformMatrix(pCorner, pXEnd, pYEnd):
 
     distPoints = np.float32([distCorner, distXEnd, distYEnd, dist4]) # type: ignore
 
-    M = cv2.getPerspectiveTransform(srcPoints, distPoints)
+    M = cv2.getPerspectiveTransform(srcPoints, distPoints) # type: ignore
     return M
 
 def rectifyImage(image: np.ndarray, matrix):
