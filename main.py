@@ -7,6 +7,8 @@ filePrefix = "trial"
 startNum = 1
 endNum = 7
 
+outputFolder = "DIO_FIRST_1000_Trials"
+
 def runVideo(fileName: str):
     pointGrabber = PointGrabber()
     pointGrabber.setFileName(fileName)
@@ -44,10 +46,12 @@ def runVideo(fileName: str):
     grapher.graphPoints(timeStamps, realPoints[0], "Time (s)", "X (m)")
     grapher.graphPoints(timeStamps, realPoints[1], "Time (s)", "Y (m)")
 
-    grapher.writeData(fileName, realPoints, timeStamps)
+    grapher.writeData(f"{outputFolder}/{fileName}", realPoints, timeStamps)
 
 
 #for trialNum in range(startNum, endNum+1):
 #    runVideo(f"{filePrefix}{trialNum}")
 
-runVideo("PositionExam")
+#runVideo("PositionExam")
+#grapher.testMultiple()
+grapher.testSingle()

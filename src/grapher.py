@@ -14,7 +14,7 @@ def graphPoints(xPoints: np.ndarray, yPoints: np.ndarray, xLabel: str = "", yLab
     plt.show()
 
 def fitGraph(xPoints: np.ndarray, yPoints: np.ndarray, xLabel: str="", yLabel: str="", degree: int =3):
-    coeff = list(getPoly(xPoints, yPoints, degree))
+    coeff = getPoly(xPoints, yPoints, degree)
     x_line, y_line = evalPoly(coeff, min(xPoints), max(xPoints))
 
     plt.scatter(xPoints, yPoints)
@@ -43,16 +43,16 @@ def addLine(xPoints, yPoints):
 def addWrongLineData(coords, timeStamps) -> None:
     startingHeight = .42803907627239823
     correctedTime = timeStamps - timeStamps[0]
-    yCoeff = getPoly(correctedTime, coords[1], 3)
-    roots = np.roots(yCoeff[:-1] + [yCoeff[-1] - startingHeight])
-    startX = roots[-1]
-    yCoeff = xShiftPoly(yCoeff, startX)
-    xCoeff = getPoly(correctedTime, coords[0], 1)
-    xCoeff = xShiftPoly(xCoeff, startX)
-    print(getVelocityAtPoint(yCoeff, xCoeff, 0))
-    print(np.degrees(getAngleAtPoint(yCoeff, xCoeff, 0)))
-    # printPoly(yCoeff)
-    xLine, yLine = evalPoly(yCoeff, 0, max(correctedTime))
+    yPoly = getPoly(correctedTime, coords[1], 3)
+    roots = (yPoly - startingHeight).roots()
+    startX = roots[0]
+    yPoly = xShiftPoly(yPoly, startX)
+    xPoly = getPoly(correctedTime, coords[0], 1)
+    xPoly = xShiftPoly(xPoly, startX)
+    print(getVelocityAtPoint(yPoly, xPoly, 0))
+    print(np.degrees(getAngleAtPoint(yPoly, xPoly, 0)))
+    print(yPoly)
+    xLine, yLine = evalPoly(yPoly, 0, max(correctedTime))
     addLine(xLine, yLine)
 
 def graphFile(filePath: str):
@@ -61,17 +61,17 @@ def graphFile(filePath: str):
     graphPoints(timeStamps, coords[0], "Time", "X Position")
 
 def testSingle():
-    coords, timeStamps = loadData("data/trial1.txt")
-    fitGraph(timeStamps, coords[1], "Time (ms)", "Y (m)")
+    coords, timeStamps = loadData("data/DIO_first_1000_Trials/trial2.txt")
+    fitGraph(timeStamps, coords[0], "Time (ms)", "X (m)", 1)
 
 def testMultiple():
     startNum = 1
     endNum = 7
     for trialNum in range(startNum, endNum + 1):
         if trialNum in [1, 3, 6]:
-            continue
+            # continue
             pass
-        coords, timeStamps = loadData(f"data/trial{trialNum}.txt")
+        coords, timeStamps = loadData(f"data/DIO_first_1000_Trials/trial{trialNum}.txt")
         addWrongLineData(coords, timeStamps)
     plt.xlabel("Time (ms)")
     plt.ylabel("Y Position (m)")

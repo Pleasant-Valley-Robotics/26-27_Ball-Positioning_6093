@@ -126,6 +126,7 @@ class FrameGrabber(Grabber):
 
             if key == 27:
                 cv2.destroyAllWindows()
+                "Exiting early..."
                 exit(1)
 
         while not cv2.waitKey(30) == 27:
