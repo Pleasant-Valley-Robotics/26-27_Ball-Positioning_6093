@@ -40,7 +40,7 @@ def addLine(xPoints, yPoints):
         linewidth=3,
     )
 
-def addWrongLineData(coords, timeStamps) -> None:
+def getWrongEquations(coords, timeStamps) -> tuple[Polynomial, Polynomial]:
     startingHeight = .42803907627239823
     correctedTime = timeStamps - timeStamps[0]
     yPoly = getPoly(correctedTime, coords[1], 3)
@@ -49,11 +49,7 @@ def addWrongLineData(coords, timeStamps) -> None:
     yPoly = xShiftPoly(yPoly, startX)
     xPoly = getPoly(correctedTime, coords[0], 1)
     xPoly = xShiftPoly(xPoly, startX)
-    print(getVelocityAtPoint(yPoly, xPoly, 0))
-    print(np.degrees(getAngleAtPoint(yPoly, xPoly, 0)))
-    print(yPoly)
-    xLine, yLine = evalPoly(yPoly, 0, max(correctedTime))
-    addLine(xLine, yLine)
+    return xPoly, yPoly
 
 def graphFile(filePath: str):
     coords, timeStamps = loadData("data/" + filePath)
@@ -72,7 +68,12 @@ def testMultiple():
             # continue
             pass
         coords, timeStamps = loadData(f"data/DIO_first_1000_Trials/trial{trialNum}.txt")
-        addWrongLineData(coords, timeStamps)
+        xPoly, yPoly = getWrongEquations(coords, timeStamps)
+        xLine, yLine = evalPoly(yPoly, 0, max(timeStamps - timeStamps[0]))
+        addLine(xLine, yLine)
+        # print(getVelocityAtPoint(yPoly, xPoly, 0))
+        # print(np.degrees(getAngleAtPoint(yPoly, xPoly, 0)))
+    
     plt.xlabel("Time (ms)")
     plt.ylabel("Y Position (m)")
     plt.title("DIO Ball paths at 1000 motor speed")

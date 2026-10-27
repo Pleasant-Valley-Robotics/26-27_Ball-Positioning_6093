@@ -3,8 +3,6 @@ import numpy as np
 from pathlib import Path
 from colorsys import hls_to_rgb
 
-import src.grapher as grapher
-
 blur = 11
 
 lowerYellow = np.array([20, 100, 100])

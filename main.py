@@ -53,5 +53,5 @@ def runVideo(fileName: str):
 #    runVideo(f"{filePrefix}{trialNum}")
 
 #runVideo("PositionExam")
-#grapher.testMultiple()
-grapher.testSingle()
+grapher.testMultiple()
+# grapher.testSingle()
