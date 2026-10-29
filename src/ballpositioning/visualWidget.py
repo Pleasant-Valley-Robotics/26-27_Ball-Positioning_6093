@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 
-import src.converter as converter
+import ballpositioning.converter as converter
 
 class Grabber:
     fileName: str = "fullTest.mp4"

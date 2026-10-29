@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.fileIO import *
-from src.equations import *
+from ballpositioning.fileIO import *
+from ballpositioning.equations import *
 
 def graphPoints(xPoints: np.ndarray, yPoints: np.ndarray, xLabel: str = "", yLabel: str = ""):
     plt.scatter(xPoints, yPoints)

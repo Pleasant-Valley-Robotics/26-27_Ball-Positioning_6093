@@ -1,7 +1,7 @@
-from src.visualWidget import PointGrabber
-from src.visualWidget import FrameGrabber
-import src.converter as converter
-import src.grapher as grapher
+from ballpositioning.visualWidget import PointGrabber
+from ballpositioning.visualWidget import FrameGrabber
+import ballpositioning.converter as converter
+import ballpositioning.grapher as grapher
 
 filePrefix = "trial"
 startNum = 1
