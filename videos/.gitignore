@@ -1,0 +1,4 @@
+# Keep this folder
+!.gitignore
+# Ignore everything else
+*.mp4

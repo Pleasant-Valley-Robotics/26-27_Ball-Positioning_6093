@@ -57,7 +57,8 @@ def graphFile(filePath: str):
     graphPoints(timeStamps, coords[0], "Time", "X Position")
 
 def testSingle():
-    coords, timeStamps = loadData("data/DIO_first_1000_Trials/trial2.txt")
+    coords, timeStamps = loadData("data/PositionExam.txt")
+    plt.title("X Position vs Time at 1000 Motor Speed.")
     fitGraph(timeStamps, coords[0], "Time (ms)", "X (m)", 1)
 
 def testMultiple():
