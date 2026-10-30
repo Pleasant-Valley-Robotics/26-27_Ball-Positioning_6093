@@ -51,15 +51,22 @@ def getWrongEquations(coords, timeStamps) -> tuple[Polynomial, Polynomial]:
     xPoly = xShiftPoly(xPoly, startX)
     return xPoly, yPoly
 
+def getEquations(coords, timeStamps) -> tuple[Polynomial, Polynomial]:
+    xPoly = getPoly(timeStamps, coords[0], 1)
+    yPoly = getPoly(timeStamps, coords[1], 2)
+    xPoly -= xPoly(0)
+    yPoly -= yPoly(0)
+    return xPoly, yPoly
+
 def graphFile(filePath: str):
-    coords, timeStamps = loadData("data/" + filePath)
+    coords, timeStamps = loadData(filePath)
     graphPoints(timeStamps, coords[1], "Time", "Y Position")
     graphPoints(timeStamps, coords[0], "Time", "X Position")
 
 def testSingle():
-    coords, timeStamps = loadData("data/PositionExam.txt")
-    plt.title("X Position vs Time at 1000 Motor Speed.")
-    fitGraph(timeStamps, coords[0], "Time (ms)", "X (m)", 1)
+    coords, timeStamps = loadData("data/transformed/MultiCompute_2/1300_MotorSpeed/20261027_191051.txt")
+    plt.title("X Position vs Time at 1300 Motor Speed.")
+    fitGraph(timeStamps, coords[1], "Time (s)", "X (m)", 2)
 
 def testMultiple():
     startNum = 1
@@ -80,7 +87,30 @@ def testMultiple():
     plt.title("DIO Ball paths at 1000 motor speed")
     plt.show()
 
+def testFolder(folderPath: Path):
+    coeffs = []
+    V0s = []
+    thetas = []
+    for file in folderPath.rglob("*"):
+        coords, timeStamps = loadData(str(file))
+        xPoly, yPoly = getEquations(coords, timeStamps)
+        yVel = yPoly.deriv()
+        yAcc = yVel.deriv()
+        xVel = xPoly.deriv()
+        V0s.append(getVelocityAtPoint(yPoly, xPoly, 0))
+        thetas.append(np.degrees(getAngleAtPoint(yPoly, xPoly, 0)))
+        # xLine, yLine = evalPoly(yPoly, 0, max(timeStamps))
+        # addLine(xLine, yLine)
+        coeffs.append(yPoly.coef[2])
+        
+    plt.hist(thetas, 30, density=True)
+    # plt.xlabel("Time (s)")
+    # plt.ylabel("Y Position (m)")
+    # plt.title("DIO Ball paths at some motor speed idk")
+    plt.show()
+
 if __name__ == "__main__":
-    testMultiple()
-    #testSingle()
-    #graphFile("legacy/data.txt")
+    # testMultiple()
+    testSingle()
+    # graphFile("data/legacy/data.txt")
+    # testFolder(Path("data/transformed/MultiCompute_2/1300_MotorSpeed"))

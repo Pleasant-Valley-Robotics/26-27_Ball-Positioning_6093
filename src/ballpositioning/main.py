@@ -62,4 +62,4 @@ for path in tqdm(directory.rglob("*")):
 
 # grapher.testMultiple()
 # grapher.testSingle()
-# grapher.graphFile("transformed/MultiCompute_2/1500_MotorSpeed_1/20261027_190232.txt")
+# grapher.graphFile("data/transformed/MultiCompute_2/1500_MotorSpeed_1/20261027_190232.txt")
