@@ -2,56 +2,64 @@ from ballpositioning.visualWidget import PointGrabber
 from ballpositioning.visualWidget import FrameGrabber
 import ballpositioning.converter as converter
 import ballpositioning.grapher as grapher
+import ballpositioning.fileIO as fileIO
 
-filePrefix = "trial"
-startNum = 1
-endNum = 7
+from pathlib import Path
 
-outputFolder = "DIO_FIRST_1000_Trials"
+from tqdm import tqdm
 
-def runVideo(fileName: str):
+def runVideo(filePath: Path):
     pointGrabber = PointGrabber()
-    pointGrabber.setFileName(fileName)
-    videoPath = converter.getVideoPath(fileName)
+    pointGrabber.setFileName(filePath)
     pointGrabber.openWindow()
     pointGrabber.loadVideo(10)
-    points = pointGrabber.getPoints(2)
+    points = pointGrabber.getPoints(3)
     pointGrabber.closeWindow()
 
     frameGrabber = FrameGrabber()
-    frameGrabber.setFileName(fileName)
+    frameGrabber.setFileName(filePath)
     startFrame = frameGrabber.getFrame(0)
     endFrame = frameGrabber.getFrame(startFrame)
 
-    print(startFrame, endFrame)
+    # print(startFrame, endFrame)
 
     if points is None:
         print("Could not grab points")
-        exit(1)
+        return
 
-    dimensions = converter.getVideoDimensions(videoPath)
+    dimensions = converter.getVideoDimensions(filePath)
     if dimensions is None:
         print("Could not open video")
-        exit(1)
+        return
 
-    computeOutput = converter.computeVideo(videoPath, startFrame, endFrame)
+    computeOutput = converter.computeVideo(filePath, startFrame, endFrame)
     if computeOutput is None:
         print("There was an error in computing video")
-        exit(1)
+        return
     coords, timeStamps = computeOutput
+
+    outputFolder: Path = (filePath.relative_to(Path("videos"))).with_suffix("")
+
+    fileIO.writeData("raw" / outputFolder, coords, timeStamps, [points[0], points[1], points[2]])
+
     matrix = converter.get2PTransformMatrix(points[0], points[1], dimensions)
 
-    realPoints = converter.transformPoints(matrix, coords)
+    realPoints, correctedTime = converter.transformPoints(matrix, coords, timeStamps)
 
-    grapher.graphPoints(timeStamps, realPoints[0], "Time (s)", "X (m)")
-    grapher.graphPoints(timeStamps, realPoints[1], "Time (s)", "Y (m)")
+    fileIO.writeData("transformed" / outputFolder, realPoints, correctedTime)
 
-    grapher.writeData(f"{outputFolder}/{fileName}", realPoints, timeStamps)
+    # grapher.graphPoints(timeStamps, realPoints[0], "Time (s)", "X (m)")
+    # grapher.graphPoints(timeStamps, realPoints[1], "Time (s)", "Y (m)")
 
 
-#for trialNum in range(startNum, endNum+1):
-#    runVideo(f"{filePrefix}{trialNum}")
+directory = Path("videos/MultiCompute_2")
 
-#runVideo("PositionExam")
-grapher.testMultiple()
+
+for path in tqdm(directory.rglob("*")):
+    if path.is_file():
+        runVideo(path)
+        # exit()
+
+# grapher.testMultiple()
 # grapher.testSingle()
+# grapher.graphFile("transformed/MultiCompute_2/1500_MotorSpeed_1/20261027_190232.txt")

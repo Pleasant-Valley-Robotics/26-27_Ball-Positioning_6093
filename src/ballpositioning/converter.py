@@ -49,14 +49,19 @@ def findBallCenter(image) -> tuple[int, int] | None:
         
     moments = cv2.moments(mask)
 
-    if moments["m00"] != 0:
-        centerX = int(moments["m10"] / moments["m00"])
-        centerY = int(moments["m01"] / moments["m00"])
+    # cv2.imshow("image", mask)
+    # cv2.waitKey(0)
 
-        #cv2.circle(image, (centerX, centerY), 10, (0, 0, 255), -1)
-        #cv2.imwrite("detected_center.png", image)
+    if moments["m00"] == 0:
+        return None
 
-        return centerX, centerY
+    centerX = int(moments["m10"] / moments["m00"])
+    centerY = int(moments["m01"] / moments["m00"])
+
+    # cv2.circle(image, (centerX, centerY), 10, (0, 0, 255), -1)
+    # cv2.imwrite("detected_center.png", image)
+
+    return centerX, centerY
     
 def get2PTransformMatrix(p1, p2, dimensions: tuple[int, int]):
     pixelDist = np.linalg.norm(p2 - p1)
@@ -138,9 +143,6 @@ def computeVideo(videoPath: Path, startFrame: int = 0, endFrame: float = float('
 
     coords = np.vstack((xPoints, yPoints))
 
-    timeStamps = timeStamps - timeStamps[0]
-    timeStamps = timeStamps / (8 * 1000)
-
     return coords, timeStamps
 
 def getVideoDimensions(videoPath: Path) -> tuple[int, int] | None:
@@ -158,12 +160,15 @@ def getVideoDimensions(videoPath: Path) -> tuple[int, int] | None:
 
     return width, height
 
-def transformPoints(matrix, coords: np.ndarray):
+def transformPoints(matrix, coords: np.ndarray, timeStamps: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     ones = np.ones((1, coords.shape[1]))
     new = np.vstack([coords, ones])
     transformed = matrix @ new
     transformed_2d = transformed[:2, :] / transformed[2, :]
-    return transformed_2d
+
+    correctedTime = timeStamps - timeStamps[0]
+    correctedTime = correctedTime / (8 * 1000)
+    return transformed_2d, correctedTime
 
 
 def getVideoFrame(videoPath: Path, desiredFrameNum: int) -> np.ndarray:
@@ -211,7 +216,7 @@ if __name__ == "__main__":
     grapher.graphPoints(timeStamps, coords[1])
     #grapher.graphPoints(np.array([centerX]), np.array([centerY]))
     """
-    testImage = loadImage("images/greenTest.png")
+    testImage = loadImage("images/goofyBG.jpg")
     coords = findBallCenter(testImage)
     print(coords)
 

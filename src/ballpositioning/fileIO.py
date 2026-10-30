@@ -1,9 +1,17 @@
 import numpy as np
+from pathlib import Path
 
-def writeData(filePath: str, coords: np.ndarray, timeStamps: np.ndarray):
+def writeData(filePath: Path, coords: np.ndarray, timeStamps: np.ndarray, headerData: list|None=None):
+    header = ""
+    if headerData is not None:
+        # print(str(" ".join(headerData[0])))
+        header = ", ".join([" ".join([str(value) for value in point]) for point in headerData])
     xPoints = coords[0]
     yPoints = coords[1]
-    with open("data/" + filePath + ".txt", "w") as file:
+    path = "data" / filePath.with_suffix(".txt")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as file:
+        file.write(header)
         for x, y, z in zip(xPoints, yPoints, timeStamps):
             file.write(f"{x} {y} {z}\n")
             

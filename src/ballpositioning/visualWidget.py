@@ -5,7 +5,7 @@ from pathlib import Path
 import ballpositioning.converter as converter
 
 class Grabber:
-    fileName: str = "fullTest.mp4"
+    filePath: Path
 
     img: np.ndarray
 
@@ -13,17 +13,14 @@ class Grabber:
 
     shown: bool = False
 
-    def setFileName(self, name:str):
-        self.fileName = name
-
-    def getFilePath(self) -> Path:
-        return converter.getVideoPath(self.fileName)
+    def setFileName(self, path: Path):
+        self.filePath = path
 
     def getCurrentImage(self):
         return self.img
 
     def loadVideo(self, desiredFrame: int):
-        self.img = converter.getVideoFrame(self.getFilePath(), desiredFrame)
+        self.img = converter.getVideoFrame(self.filePath, desiredFrame)
         cv2.imshow(self.windowName, self.getCurrentImage())
 
     def openWindow(self):
@@ -150,6 +147,6 @@ if __name__ == "__main__":
     """
 
     grabber = FrameGrabber()
-    grabber.setFileName("fullTest.mp4")
+    grabber.setFileName(Path("fullTest.mp4"))
     frame = grabber.getFrame(200)
     print(frame)
