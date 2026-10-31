@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+import cv2
+
 from ballpositioning.fileIO import *
 from ballpositioning.equations import *
 
@@ -58,10 +60,16 @@ def getEquations(coords, timeStamps) -> tuple[Polynomial, Polynomial]:
     yPoly -= yPoly(0)
     return xPoly, yPoly
 
+def graphPoly(poly, xAxis):
+    xLine, yLine = evalPoly(poly, 0, max(xAxis))
+    addLine(xLine, yLine)
+
 def graphFile(filePath: str):
     coords, timeStamps = loadData(filePath)
-    graphPoints(timeStamps, coords[1], "Time", "Y Position")
-    graphPoints(timeStamps, coords[0], "Time", "X Position")
+    plt.title("Y Position over Time")
+    graphPoints(timeStamps, coords[1], "Time (s)", "Y Position (m)")
+    plt.title("X Position over Time")
+    graphPoints(timeStamps, coords[0], "Time (s)", "X Position (m)")
 
 def testSingle():
     coords, timeStamps = loadData("data/transformed/MultiCompute_2/1300_MotorSpeed/20261027_191051.txt")
@@ -87,30 +95,70 @@ def testMultiple():
     plt.title("DIO Ball paths at 1000 motor speed")
     plt.show()
 
+def quantifyDifference(coords, timeStamps, isY: bool=True):
+    outlierBounds = 1000
+    if isY:
+        actualDegree = 3
+        theoreticalDegree = 2
+    else:
+        actualDegree = 2
+        theoreticalDegree = 1
+    actual = getPoly(timeStamps - timeStamps[0], coords[int(isY)], actualDegree)
+    theoretical = getPoly(timeStamps - timeStamps[0], coords[int(isY)], theoreticalDegree)
+    diff = actual - theoretical
+    if abs(diff(timeStamps[0])) > outlierBounds or abs(diff(timeStamps[-1])) > outlierBounds:
+        return
+        pass
+    graphPoly(diff, timeStamps - timeStamps[0])
+
+def compareTheoretical(coords, timeStamps):
+    actual = getPoly(timeStamps, coords[1], 3)
+    actual -= actual(0)
+    startYVel = getVelocityComponent(actual, 0)
+    theoretical = getSuperTheoreticalPoly(startYVel).convert(domain=actual.domain)
+    diff = actual - theoretical
+    graphPoly(diff, timeStamps)
+    # graphPoly(actual, timeStamps)
+    # graphPoly(theoretical, timeStamps)
+
+def testDifferences():
+    coords, timeStamps = loadData("data/transformed/MultiCompute_2/1300_MotorSpeed/20261027_191051.txt")
+    quantifyDifference(coords, timeStamps, False)
+    plt.show()
+
+def plotAll(coords, timeStamps):
+    xPoly, yPoly = getEquations(coords, timeStamps)
+    yVel = yPoly.deriv()
+    yAcc = yVel.deriv()
+    xVel = xPoly.deriv()
+    graphPoly(yAcc, timeStamps)
+    return yAcc.coef[0]
+    # V0s.append(getVelocityAtPoint(yPoly, xPoly, 0))
+    # thetas.append(np.degrees(getAngleAtPoint(yPoly, xPoly, 0)))
+    # # xLine, yLine = evalPoly(yPoly, 0, max(timeStamps))
+    # # addLine(xLine, yLine)
+    # coeffs.append(yPoly.coef[2])
+
+
 def testFolder(folderPath: Path):
-    coeffs = []
-    V0s = []
-    thetas = []
+    data = []
     for file in folderPath.rglob("*"):
         coords, timeStamps = loadData(str(file))
-        xPoly, yPoly = getEquations(coords, timeStamps)
-        yVel = yPoly.deriv()
-        yAcc = yVel.deriv()
-        xVel = xPoly.deriv()
-        V0s.append(getVelocityAtPoint(yPoly, xPoly, 0))
-        thetas.append(np.degrees(getAngleAtPoint(yPoly, xPoly, 0)))
-        # xLine, yLine = evalPoly(yPoly, 0, max(timeStamps))
-        # addLine(xLine, yLine)
-        coeffs.append(yPoly.coef[2])
-        
-    plt.hist(thetas, 30, density=True)
-    # plt.xlabel("Time (s)")
-    # plt.ylabel("Y Position (m)")
+        compareTheoretical(coords, timeStamps)
+        # quantifyDifference(coords, timeStamps)
+        # data.append(plotAll(coords, timeStamps))
+    # print(getPercentError(-9.8, np.mean(data)))
+    # plt.hist(data, 30, density=True)
+    plt.xlabel("Time (s)")
+    plt.ylabel("Y Difference (m)")
     # plt.title("DIO Ball paths at some motor speed idk")
+    plt.title("Difference between Supertheoretical and actual Y position for DIO at 1300 motor speed")
     plt.show()
 
 if __name__ == "__main__":
     # testMultiple()
-    testSingle()
-    # graphFile("data/legacy/data.txt")
-    # testFolder(Path("data/transformed/MultiCompute_2/1300_MotorSpeed"))
+    # testSingle()
+    # graphFile("data/transformed/MultiCompute_2/1000_MotorSpeed/20261027_185022.txt")
+    testFolder(Path("data/transformed/MultiCompute_2/1300_MotorSpeed"))
+    # testFolder(Path("data/transformed/DIO_first_1000_Trials/"))
+    # testDifferences()

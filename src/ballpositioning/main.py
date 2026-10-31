@@ -6,8 +6,6 @@ import ballpositioning.fileIO as fileIO
 
 from pathlib import Path
 
-from tqdm import tqdm
-
 def runVideo(filePath: Path):
     pointGrabber = PointGrabber()
     pointGrabber.setFileName(filePath)
@@ -55,7 +53,7 @@ def runVideo(filePath: Path):
 directory = Path("videos/MultiCompute_2")
 
 
-for path in tqdm(directory.rglob("*")):
+for path in directory.rglob("*"):
     if path.is_file():
         runVideo(path)
         # exit()
