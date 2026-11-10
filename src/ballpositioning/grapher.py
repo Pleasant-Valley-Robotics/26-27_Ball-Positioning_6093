@@ -16,8 +16,8 @@ def graphPoints(xPoints: np.ndarray, yPoints: np.ndarray, xLabel: str = "", yLab
     plt.show()
 
 def fitGraph(xPoints: np.ndarray, yPoints: np.ndarray, xLabel: str="", yLabel: str="", degree: int =3):
-    coeff = getPoly(xPoints, yPoints, degree)
-    x_line, y_line = evalPoly(coeff, min(xPoints), max(xPoints))
+    line = Line.fit(xPoints, yPoints, degree)
+    x_line, y_line = line.eval(min(xPoints), max(xPoints))
 
     plt.scatter(xPoints, yPoints)
 
@@ -42,26 +42,26 @@ def addLine(xPoints, yPoints):
         linewidth=3,
     )
 
-def getWrongEquations(coords, timeStamps) -> tuple[Polynomial, Polynomial]:
+def getWrongEquations(coords, timeStamps) -> tuple[Line, Line]:
     startingHeight = .42803907627239823
     correctedTime = timeStamps - timeStamps[0]
-    yPoly = getPoly(correctedTime, coords[1], 3)
-    roots = (yPoly - startingHeight).roots()
+    yPoly = Line.fit(correctedTime, coords[1], 3)
+    roots = (yPoly.poly - startingHeight).roots()
     startX = roots[0]
-    yPoly = xShiftPoly(yPoly, startX)
-    xPoly = getPoly(correctedTime, coords[0], 1)
-    xPoly = xShiftPoly(xPoly, startX)
+    yPoly.shiftX(startX)
+    xPoly = Line.fit(correctedTime, coords[0], 1)
+    xPoly.shiftX(startX)
     return xPoly, yPoly
 
-def getEquations(coords, timeStamps) -> tuple[Polynomial, Polynomial]:
-    xPoly = getPoly(timeStamps, coords[0], 1)
-    yPoly = getPoly(timeStamps, coords[1], 2)
-    xPoly -= xPoly(0)
-    yPoly -= yPoly(0)
+def getEquations(coords, timeStamps, xDegree:int=1, yDegree:int=2) -> tuple[Line, Line]:
+    xPoly = Line.fit(timeStamps, coords[0], xDegree)
+    yPoly = Line.fit(timeStamps, coords[1], yDegree)
+    xPoly.poly -= xPoly.poly(0)
+    yPoly.poly -= yPoly.poly(0)
     return xPoly, yPoly
 
-def graphPoly(poly, xAxis):
-    xLine, yLine = evalPoly(poly, 0, max(xAxis))
+def graphPoly(poly: Line, xAxis):
+    xLine, yLine = poly.eval(0, max(xAxis))
     addLine(xLine, yLine)
 
 def graphFile(filePath: str):
@@ -85,7 +85,7 @@ def testMultiple():
             pass
         coords, timeStamps = loadData(f"data/DIO_first_1000_Trials/trial{trialNum}.txt")
         xPoly, yPoly = getWrongEquations(coords, timeStamps)
-        xLine, yLine = evalPoly(yPoly, 0, max(timeStamps - timeStamps[0]))
+        xLine, yLine = yPoly.eval(0, max(timeStamps - timeStamps[0]))
         addLine(xLine, yLine)
         # print(getVelocityAtPoint(yPoly, xPoly, 0))
         # print(np.degrees(getAngleAtPoint(yPoly, xPoly, 0)))
@@ -103,20 +103,19 @@ def quantifyDifference(coords, timeStamps, isY: bool=True):
     else:
         actualDegree = 2
         theoreticalDegree = 1
-    actual = getPoly(timeStamps - timeStamps[0], coords[int(isY)], actualDegree)
-    theoretical = getPoly(timeStamps - timeStamps[0], coords[int(isY)], theoreticalDegree)
-    diff = actual - theoretical
-    if abs(diff(timeStamps[0])) > outlierBounds or abs(diff(timeStamps[-1])) > outlierBounds:
+    actual = Line.fit(timeStamps - timeStamps[0], coords[int(isY)], actualDegree)
+    theoretical = Line.fit(timeStamps - timeStamps[0], coords[int(isY)], theoreticalDegree)
+    diff = Line.fit2(actual.poly - theoretical.poly, coords[int(isY)], timeStamps)
+    if abs(diff.poly(timeStamps[0])) > outlierBounds or abs(diff.poly(timeStamps[-1])) > outlierBounds:
         return
         pass
     graphPoly(diff, timeStamps - timeStamps[0])
 
 def compareTheoretical(coords, timeStamps):
-    actual = getPoly(timeStamps, coords[1], 3)
-    actual -= actual(0)
-    startYVel = getVelocityComponent(actual, 0)
-    theoretical = getSuperTheoreticalPoly(startYVel).convert(domain=actual.domain)
-    diff = actual - theoretical
+    actual = Line.fit(timeStamps, coords[1], 3)
+    theoretical = TheoreticalLine(timeStamps, coords[1])
+    theoretical.poly = theoretical.poly.convert(domain=actual.poly.domain)
+    diff = Line.fit2(actual.poly - theoretical.poly, timeStamps, coords[1])
     graphPoly(diff, timeStamps)
     # graphPoly(actual, timeStamps)
     # graphPoly(theoretical, timeStamps)
@@ -127,12 +126,12 @@ def testDifferences():
     plt.show()
 
 def plotAll(coords, timeStamps):
-    xPoly, yPoly = getEquations(coords, timeStamps)
-    yVel = yPoly.deriv()
+    xLine, yLine = getEquations(coords, timeStamps, yDegree=3)
+    yVel = yLine.deriv()
     yAcc = yVel.deriv()
-    xVel = xPoly.deriv()
-    graphPoly(yAcc, timeStamps)
-    return yAcc.coef[0]
+    xVel = xLine.poly.deriv()
+    # graphPoly(yLine, timeStamps)
+    return yLine.residuals
     # V0s.append(getVelocityAtPoint(yPoly, xPoly, 0))
     # thetas.append(np.degrees(getAngleAtPoint(yPoly, xPoly, 0)))
     # # xLine, yLine = evalPoly(yPoly, 0, max(timeStamps))
@@ -144,15 +143,17 @@ def testFolder(folderPath: Path):
     data = []
     for file in folderPath.rglob("*"):
         coords, timeStamps = loadData(str(file))
-        compareTheoretical(coords, timeStamps)
+        # compareTheoretical(coords, timeStamps)
         # quantifyDifference(coords, timeStamps)
-        # data.append(plotAll(coords, timeStamps))
+        data.append(plotAll(coords, timeStamps))
     # print(getPercentError(-9.8, np.mean(data)))
-    # plt.hist(data, 30, density=True)
-    plt.xlabel("Time (s)")
-    plt.ylabel("Y Difference (m)")
-    # plt.title("DIO Ball paths at some motor speed idk")
-    plt.title("Difference between Supertheoretical and actual Y position for DIO at 1300 motor speed")
+    plt.hist(data, 30, density=True)
+    # plt.xlabel("Time (s)")
+    plt.xlabel("Difference between actual")
+    # plt.ylabel("Y Difference (m)")
+    plt.ylabel("Number of occurences")
+    plt.title("DIO 2nd degree polynomial fit R^2")
+    # plt.title("Difference between Supertheoretical and actual Y position for DIO at 1300 motor speed")
     plt.show()
 
 if __name__ == "__main__":
