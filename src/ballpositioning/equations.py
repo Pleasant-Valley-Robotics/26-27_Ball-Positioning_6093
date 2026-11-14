@@ -1,6 +1,7 @@
 import numpy as np
 from math import sqrt
 from numpy.polynomial import Polynomial
+from enum import Enum
 
 class Line:
     # Coefficients are lowest degree to highest degree
@@ -82,3 +83,13 @@ def getAngleAtPoint(yPoly: Line, xPoly: Line, time: float):
 
 def getPercentError(predicted, actual):
     return abs((actual - predicted) / actual) * 100
+
+class Point:
+    x: float
+    y: float
+    z: float
+
+    def __init__(self, x, y, z=0):
+        self.x = x
+        self.y = y
+        self.z = z
