@@ -6,15 +6,15 @@ from sympy import Symbol
 from ballpositioning.equations import Point
 
 startx, starty, minGoalx, minGoaly, maxGoalx, maxGoaly = sp.symbols('startx starty minGoalx minGoaly maxGoalx maxGoaly')
-# startx = 0
-# starty = 0
-# minGoalx = 2
-# minGoaly = 2
-# maxGoalx = 3
-# maxGoaly = 3
+startx = 0
+starty = 0
+minGoalx = 2
+minGoaly = 2
+maxGoalx = 3
+maxGoaly = 3
 
 g = sp.symbols("g")
-# g = -9.8
+g = -9.8
 
 v0x, v0y = sp.symbols("v0x v0y")
 
@@ -58,12 +58,11 @@ intersectsGoal_min = fxy.subs({x: minGoalx}) >= minGoaly
 intersectsGoal_max = fxy.subs({x: maxGoalx}) <= maxGoaly
 intersectsGoal = intersectsGoal_min & intersectsGoal_max
 constraints = intersectsGoal
-# validCondition1 = (sp.Abs(v0x) > 0) & (sp.sqrt(v0x**2 + v0y**2) >= 7)
-# validCondition2 = (fxy.subs({x: minGoal[0]}) >= minGoal[1]) & (fxy.subs({x: maxGoal[0]}) <= maxGoal[1])
 
 netFinalVelocityPiecewise = sp.Piecewise((netFinalVelocity, constraints), (sp.nan, True))
-sp.pprint(netFinalVelocityPiecewise)
-finalEq = netFinalVelocityPiecewise.subs({startx: 0, starty: 0, minGoalx: 2, minGoaly: 2, maxGoalx: 3, maxGoaly: 3, g: -9.8})
+sp.pprint(netFinalVelocityPiecewise.simplify())
+# finalEq = netFinalVelocityPiecewise.subs({startx: 0, starty: 0, minGoalx: 2, minGoaly: 2, maxGoalx: 3, maxGoaly: 3, g: -9.8})
+finalEq = netFinalVelocityPiecewise
 f = sp.lambdify([v0x, v0y], finalEq)
 
 xValues = np.linspace(0, 20, 200)
@@ -83,8 +82,8 @@ ax = fig.add_subplot(111, projection='3d')
 
 ax.set_xlabel('Initial X Velocity')
 ax.set_ylabel('Initial Y Velocity')
-ax.set_zlabel('Net Velocity at Point in Time')
-ax.set_title('Net Velocity at final position')
+ax.set_zlabel('Net Velocity at Final Position')
+ax.set_title('Net Velocity at Final Position with Respect to Inital Velocities')
 
 surface = ax.plot_surface(X, Y, Z, cmap="viridis", edgecolor="none")
 plt.show()
