@@ -6,8 +6,8 @@ from sympy import Symbol
 from ballpositioning.equations import Point
 
 startx, starty, goalx, goaly = sp.symbols('startx starty goalx goaly')
-# startx = 0
-# starty = 0
+startx = 0
+starty = 0
 # goalx = 2.5
 # goaly = 2.5
 
@@ -50,11 +50,16 @@ netFinalVelocity = netFinalVelocities
 v0yRelation = sp.solve(fxy.subs({x: goalx}) - goaly, (v0x, v0y), dict=True)[0]
 sp.pprint(v0yRelation)
 finalVelocity = netFinalVelocity.subs(v0yRelation)
+finalVelocityDeriv = sp.diff(finalVelocity, v0x)
+minXVelocity = sp.solve(finalVelocityDeriv, v0x)[0]
+minYVelocity = v0yRelation[v0y].subs({v0x: minXVelocity})
+sp.pprint(minXVelocity.simplify())
+sp.pprint(minYVelocity.simplify())
 
 # bestv0x = sp.solve(finalVelocity)
 
-sp.pprint(finalVelocity.simplify())
-f = sp.lambdify([v0x], finalVelocity.subs({startx: 0, starty: 0, goalx: 2.5, goaly: 2.5}))
+# sp.pprint(finalVelocity.simplify())
+f = sp.lambdify([v0x], finalVelocity.subs({goalx: 2.5, goaly: 2.5}))
 
 xValues = np.linspace(0, 20, 200)
 yValues = f(xValues)
@@ -69,4 +74,4 @@ ax.set_xlabel('Initial X Velocity')
 ax.set_ylabel('Ending Net Velocity')
 ax.set_title('Net Velocity at Final Position Given Initial X Velocity')
 
-plt.show()
+# plt.show()
